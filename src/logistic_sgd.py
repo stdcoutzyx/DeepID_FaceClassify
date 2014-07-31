@@ -30,7 +30,7 @@ class LogisticRegression(object):
             raise TypeError('y should hava the same shape as self.y_pred',
                     ('y', target.type, 'y_pred', self.y_pred,type))
         if y.dtype.startswith('int'):
-            return T.mean(T.neq(self.y_pred, y))
+            return T.sum(T.neq(self.y_pred, y))
         else:
             raise NotImplementedError()
 
@@ -67,7 +67,7 @@ def sgd_face(learning_rate=0.13, n_epochs=300, batch_size=300, data_set_file='fa
             givens={
                 x: train_set_x[index*batch_size: (index+1)*batch_size],
                 y: train_set_y[index*batch_size: (index+1)*batch_size]})
-
+    
     g_W = T.grad(cost=cost, wrt=classifier.W)
     g_b = T.grad(cost=cost, wrt=classifier.b)
     updates = [(classifier.W, classifier.W - learning_rate * g_W),
@@ -82,15 +82,16 @@ def sgd_face(learning_rate=0.13, n_epochs=300, batch_size=300, data_set_file='fa
     
     print '... Training the model'
 
+    sample_num = train_set_x.get_value(borrow=True).shape[0]
     epoch = 0
     while epoch < n_epochs:
         epoch += 1
         for minibatch_index in xrange(n_train_batches):
             minibatch_cost = train_model(minibatch_index)
         test_losses = [test_model(i) for i in xrange(n_train_batches)]
-        test_score = numpy.mean(test_losses)
-        print 'epoch %i, test_score %f' % (epoch, test_score)
+        test_score = numpy.sum(test_losses)
+        print 'epoch %i, test_score %f' % (epoch, float(test_score) / sample_num)
 
 if __name__ == '__main__':
-    sgd_face(n_epochs=1000, data_set_file = sys.argv[1])
+    sgd_face(learning_rate=0.13, n_epochs=2000, data_set_file = sys.argv[1])
 
