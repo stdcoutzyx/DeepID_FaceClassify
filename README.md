@@ -1,4 +1,5 @@
 FaceClassify
 ============
 
-Using deep learning to do two-class face classify
+Using deep learning(theano) to do two-class face classify.
+
