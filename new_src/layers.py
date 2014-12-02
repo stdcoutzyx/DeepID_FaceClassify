@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding:utf8 -*-
+
 import numpy
 import theano
 import theano.tensor as T
@@ -73,7 +76,7 @@ class MLP(object):
         self.params = self.hiddenLayer.params + self.logRegressionLayer.params
 
 class LeNetConvLayer(object):
-    def __init__(self, rng, input, filter_shape, image_shape):
+    def __init__(self, rng, input, filter_shape, image_shape, activation=T.tanh):
         assert image_shape[1] == filter_shape[1]
         self.input = input
         fan_in = numpy.prod(filter_shape[1:])
@@ -92,11 +95,20 @@ class LeNetConvLayer(object):
                 filters = self.W,
                 filter_shape = filter_shape,
                 image_shape = image_shape)
-        self.output = T.tanh(conv_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+        conv_out = (conv_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+		self.output = conv_out if activation is None else activation(conv_out)
         self.params = [self.W, self.b]
 
+class PoolLayer(object):
+	def __init__(self, input, poolsize=(2,2)):
+		pooled_out = downsample.max_pool_2d(
+				input = input,
+				ds = poolsize,
+				ignore_border = True)
+		self.output = pooled_out
+
 class LeNetConvPoolLayer(object):
-    def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2,2)):
+    def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2,2), activation=T.tanh):
         assert image_shape[1] == filter_shape[1]
         self.input = input
         fan_in = numpy.prod(filter_shape[1:])
@@ -115,9 +127,13 @@ class LeNetConvPoolLayer(object):
                 filters = self.W,
                 filter_shape = filter_shape,
                 image_shape = image_shape)
+		conv_out = conv_out + self.b.dimshuffle('x', 0, 'x', 'x')
+		if not activation is None:
+			conv_out = activation(conv_out)
+
         pooled_out = downsample.max_pool_2d(
                 input = conv_out,
                 ds = poolsize,
                 ignore_border=True)
-        self.output = T.tanh(pooled_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+		self.output = pooled_out
         self.params = [self.W, self.b]

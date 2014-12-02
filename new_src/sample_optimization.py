@@ -174,19 +174,21 @@ def evaluate_lenet3(learning_rate=0.1, n_epochs=200, dataset='mnist.pkl.gz', nke
             input        = layer0_input,
             image_shape  = image_shape,
             filter_shape = (nkerns[0], 1, 5, 5),
-            poolsize     = (2, 2))
+            poolsize     = (2, 2),
+			activation	 = relu)
     layer1 = LeNetConvPoolLayer(rng,
             input        = layer0.output,
             image_shape  = (batch_size, nkerns[0], 12, 12),
             filter_shape = (nkerns[1],  nkerns[0], 5, 5),
-            poolsize     = (2,2))
+            poolsize     = (2,2),
+			activation	 = relu)
 
     layer2_input = layer1.output.flatten(2)
     layer2 = HiddenLayer(rng, 
             input   = layer2_input, 
             n_in    = nkerns[1] * 4 * 4,
             n_out   = 500, 
-            activation = T.tanh)
+            activation = relu)
     layer3 = LogisticRegression(
             input   = layer2.output,
             n_in    = 500,
