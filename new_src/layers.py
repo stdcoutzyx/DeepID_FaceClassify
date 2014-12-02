@@ -74,7 +74,7 @@ class MLP(object):
 
 class LeNetConvLayer(object):
     def __init__(self, rng, input, filter_shape, image_shape):
-        assert img_shape[1] == filter_shape[1]
+        assert image_shape[1] == filter_shape[1]
         self.input = input
         fan_in = numpy.prod(filter_shape[1:])
         fan_out = filter_shape[0] * numpy.prod(filter_shape[2:])
@@ -97,7 +97,7 @@ class LeNetConvLayer(object):
 
 class LeNetConvPoolLayer(object):
     def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2,2)):
-        assert img_shape[1] == filter_shape[1]
+        assert image_shape[1] == filter_shape[1]
         self.input = input
         fan_in = numpy.prod(filter_shape[1:])
         fan_out = filter_shape[0] * numpy.prod(filter_shape[2:]) / numpy.prod(poolsize)
