@@ -78,17 +78,15 @@ def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='mnist.pkl.gz',
             filter_shape = layer4_filter_shape,
             activation   = acti_func)
 
-    deepid_input = layer4.output.flatten(2)
+    # deepid_input = layer4.output.flatten(2)
 
-    '''
     layer3_output_flatten = layer3.output.flatten(2)
     layer4_output_flatten = layer4.output.flatten(2)
     deepid_input = T.concatename([layer3_output_flatten, layer4_output_flatten], axis=1)
-    '''
 
     deepid_layer = HiddenLayer(rng,
             input = deepid_input,
-            n_in  = numpy.prod(result_image_shape[1:]),
+            n_in  = numpy.prod(result_image_shape[1:]) + numpy.prod(layer4_image_shape[1:]),
             n_out = n_hidden,
             activation = acti_func)
     softmax_layer = LogisticRegression(
