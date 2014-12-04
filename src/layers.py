@@ -110,12 +110,12 @@ class LeNetConvLayer(object):
         self.params = [self.W, self.b]
 
 class PoolLayer(object):
-	def __init__(self, input, poolsize=(2,2)):
-		pooled_out = downsample.max_pool_2d(
-				input = input,
-				ds = poolsize,
-				ignore_border = True)
-		self.output = pooled_out
+    def __init__(self, input, poolsize=(2,2)):
+        pooled_out = downsample.max_pool_2d(
+                        input = input,
+                        ds = poolsize,
+                        ignore_border = True)
+        self.output = pooled_out
 
 class LeNetConvPoolLayer(object):
     def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2,2), W=None, b=None, activation=T.tanh):

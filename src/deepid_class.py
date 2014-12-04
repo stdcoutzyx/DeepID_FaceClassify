@@ -12,9 +12,46 @@ import time
 import numpy
 import theano
 
+class ParamDumpHelper:
+    def __init__(self, dump_file):
+        self.dump_file = dump_file
+
+    def dump(self, params):
+        dumped_params = self.get_params_from_file()
+        dumped_params.append(params)
+        self.params_to_file(dumped_params)
+
+    def params_to_file(self, params):
+        f = gzip.open(self.dump_file, 'wb')
+        if len(params) > 20:
+            params = params[0::2]
+        pickle.dump(params, f)
+        f.close()
+
+    def get_params_from_file(self):
+        if os.path.exists(self.dump_file):
+            f = gzip.open(self.dump_file, 'rb')
+            dumped_params = pickle.load(f)
+            f.close()
+            return dumped_params
+        return []
+        
 class DeepID:
-    def __init__(self):
+    def __init__(self, pd_helper):
         self.rng = numpy.random.RandomState(1234)
+        self.pd_helper = pd_helper
+        exist_params = pd_helper.get_params_from_file()
+        if len(exist_params) != 0:
+            self.exist_params = exist_params[-1]
+        else:
+            self.exist_params = [[None, None],
+                                 [None, None],
+                                 [None, None],
+                                 [None, None],
+                                 [None, None],
+                                 [None, None],
+                                 1.0,
+                                 0]
 
     def load_data_deepid(self, dataset='', batch_size=500):
         print 'loading data ...'
@@ -54,54 +91,65 @@ class DeepID:
         self.y = T.ivector('y')
 
         print 'building the model ...'
-
+        
         layer1_input = self.x.reshape(self.layer1_image_shape)
-        layer1 = LeNetConvPoolLayer(self.rng,
+        self.layer1 = LeNetConvPoolLayer(self.rng,
                 input        = layer1_input,
                 image_shape  = self.layer1_image_shape,
                 filter_shape = self.layer1_filter_shape,
                 poolsize     = (2,2),
+                W = self.exist_params[5][0],
+                b = self.exist_params[5][1],
                 activation   = acti_func)
 
-        layer2 = LeNetConvPoolLayer(self.rng,
-                input        = layer1.output,
+        self.layer2 = LeNetConvPoolLayer(self.rng,
+                input        = self.layer1.output,
                 image_shape  = self.layer2_image_shape,
                 filter_shape = self.layer2_filter_shape,
                 poolsize     = (2,2),
+                W = self.exist_params[4][0],
+                b = self.exist_params[4][1],
                 activation   = acti_func)
 
-        layer3 = LeNetConvPoolLayer(self.rng,
-                input        = layer2.output,
+        self.layer3 = LeNetConvPoolLayer(self.rng,
+                input        = self.layer2.output,
                 image_shape  = self.layer3_image_shape,
                 filter_shape = self.layer3_filter_shape,
                 poolsize     = (2,2),
+                W = self.exist_params[3][0],
+                b = self.exist_params[3][1],
                 activation   = acti_func)
 
-        layer4 = LeNetConvLayer(self.rng,
-                input        = layer3.output,
+        self.layer4 = LeNetConvLayer(self.rng,
+                input        = self.layer3.output,
                 image_shape  = self.layer4_image_shape,
                 filter_shape = self.layer4_filter_shape,
+                W = self.exist_params[2][0],
+                b = self.exist_params[2][1],
                 activation   = acti_func)
 
         # deepid_input = layer4.output.flatten(2)
 
-        layer3_output_flatten = layer3.output.flatten(2)
-        layer4_output_flatten = layer4.output.flatten(2)
+        layer3_output_flatten = self.layer3.output.flatten(2)
+        layer4_output_flatten = self.layer4.output.flatten(2)
         deepid_input = T.concatenate([layer3_output_flatten, layer4_output_flatten], axis=1)
 
-        deepid_layer = HiddenLayer(self.rng,
+        self.deepid_layer = HiddenLayer(self.rng,
                 input = deepid_input,
                 n_in  = numpy.prod( self.result_image_shape[1:] ) + numpy.prod( self.layer4_image_shape[1:] ),
                 # n_in  = numpy.prod( self.result_image_shape[1:] ),
                 n_out = n_hidden,
+                W = self.exist_params[1][0],
+                b = self.exist_params[1][1],
                 activation = acti_func)
         self.softmax_layer = LogisticRegression(
-                input = deepid_layer.output,
-                n_in = n_hidden,
-                n_out = n_out)
+                input = self.deepid_layer.output,
+                n_in  = n_hidden,
+                n_out = n_out,
+                W = self.exist_params[0][0],
+                b = self.exist_params[0][1])
 
-        self.cost   = self.softmax_layer.negative_log_likelihood(self.y)
-        self.params = self.softmax_layer.params + deepid_layer.params + layer4.params + layer3.params + layer2.params + layer1.params
+        self.cost = self.softmax_layer.negative_log_likelihood(self.y)
     
     def build_test_valid_model(self):
         self.test_valid_model = theano.function(inputs=[self.index],
@@ -120,6 +168,8 @@ class DeepID:
                 )
 
     def build_train_model(self):
+        self.params = self.softmax_layer.params + self.deepid_layer.params + self.layer4.params \
+                + self.layer3.params + self.layer2.params + self.layer1.params
         gparams = []
         for param in self.params:
             gparam = T.grad(self.cost, param)
@@ -137,16 +187,12 @@ class DeepID:
                 )
 
     def train(self, n_epochs=200, learning_rate=0.01):
-        print 'Train the model ...'
+        print 'Training the model ...'
         train_sample_num = self.train_set_x.get_value(borrow=True).shape[0]
         valid_sample_num = self.valid_set_x.get_value(borrow=True).shape[0]
 
-        epoch = 0
+        epoch = self.exist_params[-1]
         while epoch < n_epochs:
-            epoch += 1
-            for minibatch_index in xrange( self.n_train_batches ):
-                minibatch_cost = self.train_model(minibatch_index, learning_rate)
-                print '\tepoch %i, minibatch_index %i/%i, minibatch_cost %f' % (epoch, minibatch_index, self.n_train_batches, minibatch_cost)
             # train_losses = [test_train_model(i) for i in xrange(n_train_batches)]
             valid_losses = [self.test_valid_model(i) for i in xrange( self.n_valid_batches) ]
 
@@ -158,10 +204,25 @@ class DeepID:
             # train_score  = numpy.mean(train_losses)
             valid_score  = numpy.mean(valid_losses)
             print 'epoch %i, train_score %f, valid_score %f' % (epoch, 100., valid_score)
+            params = [self.softmax_layer.params, 
+                      self.deepid_layer.params, 
+                      self.layer4.params,
+                      self.layer3.params, 
+                      self.layer2.params,
+                      self.layer1.params,
+                      valid_score,
+                      epoch]
+            self.pd_helper.dump(params)
 
-def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='',
+            for minibatch_index in xrange( self.n_train_batches ):
+                minibatch_cost = self.train_model(minibatch_index, learning_rate)
+                print '\tepoch %i, minibatch_index %i/%i, minibatch_cost %f' % (epoch, minibatch_index, self.n_train_batches, minibatch_cost)
+            epoch += 1
+
+def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='', params_file='',
         nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=100, acti_func=relu):
-    deepid = DeepID()
+    pd_helper = ParamDumpHelper(params_file)
+    deepid = DeepID(pd_helper)
     deepid.load_data_deepid(dataset, batch_size)
     deepid.layer_params(nkerns)
     deepid.build_layer_architecture(n_hidden, n_out, acti_func)
@@ -171,7 +232,7 @@ def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='',
     deepid.train(n_epochs, learning_rate)
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print 'Usage: python %s (dataset)' % (sys.argv[0])
+    if len(sys.argv) != 3:
+        print 'Usage: python %s (dataset) (params_file)' % (sys.argv[0])
         sys.exit()
-    simple_deepid(learning_rate=0.01, n_epochs=200, dataset=sys.argv[1], nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=1357, acti_func=relu)
+    simple_deepid(learning_rate=0.01, n_epochs=200, dataset=sys.argv[1], params_file=sys.argv[2], nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=1357, acti_func=relu)
