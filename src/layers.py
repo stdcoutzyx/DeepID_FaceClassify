@@ -81,20 +81,25 @@ class MLP(object):
         self.params = self.hiddenLayer.params + self.logRegressionLayer.params
 
 class LeNetConvLayer(object):
-    def __init__(self, rng, input, filter_shape, image_shape, activation=T.tanh):
+    def __init__(self, rng, input, filter_shape, image_shape, W=None, b=None, activation=T.tanh):
         assert image_shape[1] == filter_shape[1]
         self.input = input
         fan_in = numpy.prod(filter_shape[1:])
         fan_out = filter_shape[0] * numpy.prod(filter_shape[2:])
         
-        W_bound = numpy.sqrt(6. /(fan_in + fan_out))
-        self.W = theano.shared(
+        if W is None:
+            W_bound = numpy.sqrt(6. /(fan_in + fan_out))
+            W = theano.shared(
                 numpy.asarray(
                     rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
                     dtype=theano.config.floatX),
                 borrow=True)
-        b_values = numpy.zeros( (filter_shape[0],), dtype=theano.config.floatX)
-        self.b = theano.shared(value=b_values, borrow=True)
+        if b is None:
+            b_values = numpy.zeros( (filter_shape[0],), dtype=theano.config.floatX)
+            b = theano.shared(value=b_values, borrow=True)
+        self.W = W
+        self.b = b
+
         conv_out = conv.conv2d(
                 input = input,
                 filters = self.W,
@@ -113,20 +118,25 @@ class PoolLayer(object):
 		self.output = pooled_out
 
 class LeNetConvPoolLayer(object):
-    def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2,2), activation=T.tanh):
+    def __init__(self, rng, input, filter_shape, image_shape, poolsize=(2,2), W=None, b=None, activation=T.tanh):
         assert image_shape[1] == filter_shape[1]
         self.input = input
         fan_in = numpy.prod(filter_shape[1:])
         fan_out = filter_shape[0] * numpy.prod(filter_shape[2:]) / numpy.prod(poolsize)
         
-        W_bound = numpy.sqrt(6. /(fan_in + fan_out))
-        self.W = theano.shared(
-                numpy.asarray(
-                    rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
-                    dtype=theano.config.floatX),
-                borrow=True)
-        b_values = numpy.zeros( (filter_shape[0],), dtype=theano.config.floatX)
-        self.b = theano.shared(value=b_values, borrow=True)
+        if W is None:
+            W_bound = numpy.sqrt(6. /(fan_in + fan_out))
+            W = theano.shared(
+                    numpy.asarray(
+                        rng.uniform(low=-W_bound, high=W_bound, size=filter_shape),
+                        dtype=theano.config.floatX),
+                    borrow=True)
+        if b is None:
+            b_values = numpy.zeros( (filter_shape[0],), dtype=theano.config.floatX)
+            b = theano.shared(value=b_values, borrow=True)
+        self.W = W
+        self.b = b
+
         conv_out = conv.conv2d(
                 input = input,
                 filters = self.W,
