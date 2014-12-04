@@ -25,6 +25,7 @@ def sgd_optimization_mnist(learning_rate=0.13,
     index = T.lscalar()
     x = T.matrix('x')
     y = T.ivector('y')
+    step_rate = T.dscalar()
 
     classifier = LogisticRegression(input=x, n_in=28*28, n_out=10)
     cost = classifier.negative_log_likelihood(y)
@@ -45,9 +46,9 @@ def sgd_optimization_mnist(learning_rate=0.13,
 
     g_W = T.grad(cost=cost, wrt=classifier.W)
     g_b = T.grad(cost=cost, wrt=classifier.b)
-    updates = [(classifier.W, classifier.W - learning_rate * g_W),
-               (classifier.b, classifier.b - learning_rate * g_b)]
-    train_model = theano.function(inputs=[index],
+    updates = [(classifier.W, classifier.W - step_rate * g_W),
+               (classifier.b, classifier.b - step_rate * g_b)]
+    train_model = theano.function(inputs=[index, step_rate],
             outputs=cost,
             updates=updates,
             givens = {
@@ -61,8 +62,10 @@ def sgd_optimization_mnist(learning_rate=0.13,
     epoch = 0
     while epoch < n_epochs:
         epoch += 1
+        if epoch > 50:
+            learning_rate = 0.05
         for minibatch_index in xrange(n_train_batches):
-            minibatch_cost = train_model(minibatch_index)
+            minibatch_cost = train_model(minibatch_index, learning_rate)
         train_losses = [test_train_model(i) for i in xrange(n_train_batches)]
         valid_losses = [test_valid_model(i) for i in xrange(n_valid_batches)]
 
@@ -253,6 +256,6 @@ if __name__ == '__main__':
     if len(sys.argv) != 2:
         print 'Usage: python %s (dataset_file)' % (sys.argv[0])
         sys.exit()
-    # sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000, dataset=sys.argv[1], batch_size=600)
+    sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000, dataset=sys.argv[1], batch_size=600)
     # test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000, dataset=sys.argv[1], batch_size=20, n_hidden=500)
-    evaluate_lenet3(learning_rate=0.1, n_epochs=200, dataset=sys.argv[1], nkerns=[20, 50], batch_size=500)
+    # evaluate_lenet3(learning_rate=0.1, n_epochs=200, dataset=sys.argv[1], nkerns=[20, 50], batch_size=500)

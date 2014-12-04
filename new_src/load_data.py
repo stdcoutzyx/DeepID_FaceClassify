@@ -45,3 +45,5 @@ def load_data_nogzip(dataset):
         return shared_x, T.cast(shared_y, 'int32')
     train_set_x, train_set_y = shared_dataset(train_set)
     valid_set_x, valid_set_y = shared_dataset(valid_set)
+
+    return [(train_set_x, train_set_y), (valid_set_x, valid_set_y)]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf8 -*-
 
-from layer import *
+from layers import *
 from load_data import *
 
 import cPickle
@@ -82,7 +82,7 @@ def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='mnist.pkl.gz',
 
     layer3_output_flatten = layer3.output.flatten(2)
     layer4_output_flatten = layer4.output.flatten(2)
-    deepid_input = T.concatename([layer3_output_flatten, layer4_output_flatten], axis=1)
+    deepid_input = T.concatenate([layer3_output_flatten, layer4_output_flatten], axis=1)
 
     deepid_layer = HiddenLayer(rng,
             input = deepid_input,
