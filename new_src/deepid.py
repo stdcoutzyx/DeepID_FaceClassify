@@ -12,7 +12,7 @@ import time
 import numpy
 import theano
 
-def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='mnist.pkl.gz', 
+def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='', 
         nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=100, acti_func=relu):
     '''
     simple means the deepid layer input is only the layer4 output.
@@ -24,7 +24,8 @@ def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='mnist.pkl.gz',
     softmax: logistic layer
     '''
 
-    datasets = load_data(dataset)
+    print 'loading data ...'
+    datasets = load_data_nogzip(dataset)
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
 
@@ -35,16 +36,16 @@ def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='mnist.pkl.gz',
     x = T.matrix('x')
     y = T.ivector('y')
 
-    src_channel = 1
-    layer1_image_shape  = (batch_size, src_channel, 39, 31)
+    src_channel = 3
+    layer1_image_shape  = (batch_size, src_channel, 55, 47)
     layer1_filter_shape = (nkerns[0],  src_channel, 4, 4)
-    layer2_image_shape  = (batch_size, nkerns[0], 18, 14)
+    layer2_image_shape  = (batch_size, nkerns[0], 26, 22)
     layer2_filter_shape = (nkerns[1], nkerns[0], 3, 3)
-    layer3_image_shape  = (batch_size, nkerns[1], 8, 6)
+    layer3_image_shape  = (batch_size, nkerns[1], 12, 10)
     layer3_filter_shape = (nkerns[2], nkerns[1], 3, 3)
-    layer4_image_shape  = (batch_size, nkerns[2], 3, 2)
+    layer4_image_shape  = (batch_size, nkerns[2], 5, 4)
     layer4_filter_shape = (nkerns[3], nkerns[2], 2, 2)
-    result_image_shape  = (batch_size, nkerns[3], 2, 1)
+    result_image_shape  = (batch_size, nkerns[3], 4, 3)
 
     rng = numpy.random.RandomState(1234)
 
@@ -87,6 +88,7 @@ def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='mnist.pkl.gz',
     deepid_layer = HiddenLayer(rng,
             input = deepid_input,
             n_in  = numpy.prod(result_image_shape[1:]) + numpy.prod(layer4_image_shape[1:]),
+            # n_in  = numpy.prod(result_image_shape[1:]),
             n_out = n_hidden,
             activation = acti_func)
     softmax_layer = LogisticRegression(
@@ -137,7 +139,7 @@ def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='mnist.pkl.gz',
         for minibatch_index in xrange(n_train_batches):
             minibatch_cost = train_model(minibatch_index)
             print '\tepoch %i, minibatch_index %i/%i, minibatch_cost %f' % (epoch, minibatch_index, n_train_batches, minibatch_cost)
-        train_losses = [test_train_model(i) for i in xrange(n_train_batches)]
+        # train_losses = [test_train_model(i) for i in xrange(n_train_batches)]
         valid_losses = [test_valid_model(i) for i in xrange(n_valid_batches)]
 
         '''
@@ -145,6 +147,12 @@ def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='mnist.pkl.gz',
         valid_score  = numpy.sum(valid_losses)
         print 'epoch %i, train_score %f, valid_score %f' % (epoch, float(train_score) / train_sample_num, float(valid_score) / valid_sample_num)
         '''
-        train_score  = numpy.mean(train_losses)
+        # train_score  = numpy.mean(train_losses)
         valid_score  = numpy.mean(valid_losses)
-        print 'epoch %i, train_score %f, valid_score %f' % (epoch, train_score, valid_score)
+        print 'epoch %i, train_score %f, valid_score %f' % (epoch, 100., valid_score)
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print 'Usage: python %s (dataset)' % (sys.argv[0])
+        sys.exit()
+    simple_deepid(learning_rate=0.01, n_epochs=200, dataset=sys.argv[1], nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=1357, acti_func=relu)
