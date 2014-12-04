@@ -11,15 +11,20 @@ def relu(x):
     return T.switch(x<0, 0, x)
 
 class LogisticRegression(object):
-    def __init__(self, input, n_in, n_out):
-        self.W = theano.shared(
-                value=numpy.zeros( (n_in, n_out), dtype=theano.config.floatX), 
-                name='W', 
-                borrow=True)
-        self.b = theano.shared(
-                value=numpy.zeros( (n_out,), dtype=theano.config.floatX),
-                name='b',
-                borrow=True)
+    def __init__(self, input, n_in, n_out, W=None, b=None):
+        if W is None:
+            W = theano.shared(
+                    value=numpy.zeros( (n_in, n_out), dtype=theano.config.floatX), 
+                    name='W', 
+                    borrow=True)
+        if b is None:
+            b = theano.shared(
+                    value=numpy.zeros( (n_out,), dtype=theano.config.floatX),
+                    name='b',
+                    borrow=True)
+        self.W = W
+        self.b = b
+        
         self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b)
         self.y_pred = T.argmax(self.p_y_given_x, axis=1)
         self.params = [self.W, self.b]
