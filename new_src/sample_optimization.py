@@ -63,7 +63,7 @@ def sgd_optimization_mnist(learning_rate=0.13,
     while epoch < n_epochs:
         epoch += 1
         if epoch > 50:
-            learning_rate = 0.05
+            learning_rate = 0.1
         for minibatch_index in xrange(n_train_batches):
             minibatch_cost = train_model(minibatch_index, learning_rate)
         train_losses = [test_train_model(i) for i in xrange(n_train_batches)]
@@ -256,6 +256,6 @@ if __name__ == '__main__':
     if len(sys.argv) != 2:
         print 'Usage: python %s (dataset_file)' % (sys.argv[0])
         sys.exit()
-    sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000, dataset=sys.argv[1], batch_size=600)
+    sgd_optimization_mnist(learning_rate=0.2, n_epochs=1000, dataset=sys.argv[1], batch_size=600)
     # test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000, dataset=sys.argv[1], batch_size=20, n_hidden=500)
     # evaluate_lenet3(learning_rate=0.1, n_epochs=200, dataset=sys.argv[1], nkerns=[20, 50], batch_size=500)
