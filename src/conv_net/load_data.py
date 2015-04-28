@@ -45,8 +45,8 @@ def load_data_split_pickle(dataset):
         return combine_d, combine_l
 
     valid_folder, train_folder = dataset
-    valid_file_names = get_files(valid_folder)[0:2]
-    train_file_names = get_files(train_folder)[0:5]
+    valid_file_names = get_files(valid_folder)
+    train_file_names = get_files(train_folder)
     valid_set = load_data_xy(valid_file_names)
     train_set = load_data_xy(train_file_names)
 

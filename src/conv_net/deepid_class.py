@@ -23,8 +23,8 @@ class ParamDumpHelper:
 
     def params_to_file(self, params):
         f = gzip.open(self.dump_file, 'wb')
-        if len(params) > 20:
-            params = params[0::2]
+        if len(params) > 5:
+            params = params[3:]
         pickle.dump(params, f)
         f.close()
 
@@ -240,7 +240,8 @@ def simple_deepid(learning_rate, n_epochs, dataset, params_file,
     deepid.build_test_valid_model()
     deepid.build_train_model()
     loss_records = deepid.train(n_epochs, learning_rate)
-
+    
+    print ''
     for record in loss_records:
         print record[0], record[1], record[2]
     
@@ -249,4 +250,4 @@ if __name__ == '__main__':
     if len(sys.argv) != 4:
         print 'Usage: python %s vec_valid vec_train params_file' % (sys.argv[0])
         sys.exit()
-    simple_deepid(learning_rate=0.01, n_epochs=5, dataset=(sys.argv[1], sys.argv[2]), params_file=sys.argv[3], nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=1595, acti_func=relu)
+    simple_deepid(learning_rate=0.01, n_epochs=50, dataset=(sys.argv[1], sys.argv[2]), params_file=sys.argv[3], nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=1595, acti_func=relu)
