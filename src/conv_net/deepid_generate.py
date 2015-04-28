@@ -138,8 +138,6 @@ def deepid_generating(learning_rate=0.1, dataset='', params_file='', result_file
     f = open(result_file, 'wb')
     pickle.dump(new_data, f)
     f.close()
-    
-
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
