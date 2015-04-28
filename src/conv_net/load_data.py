@@ -22,6 +22,22 @@ def shared_dataset(data_xy, borrow=True):
             borrow=borrow)
     return shared_x, T.cast(shared_y, 'int32')
 
+def load_data(dataset):
+    f = gzip.open(dataset, 'rb')
+    train_set, valid_set = cPickle.load(f)[0:2]
+    f.close()
+    train_set_x, train_set_y = shared_dataset(train_set)
+    valid_set_x, valid_set_y = shared_dataset(valid_set)
+    return [(train_set_x, train_set_y), (valid_set_x, valid_set_y)]
+
+def load_data(dataset):
+    f = open(dataset, 'rb')
+    train_set, valid_set = pickle.load(f)[0:2]
+    f.close()
+    train_set_x, train_set_y = shared_dataset(train_set)
+    valid_set_x, valid_set_y = shared_dataset(valid_set)
+    return [(train_set_x, train_set_y), (valid_set_x, valid_set_y)]
+
 def load_data_split_pickle(dataset):
     def get_files(vec_folder):
         file_names = os.listdir(vec_folder)
