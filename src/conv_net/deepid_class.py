@@ -53,15 +53,21 @@ class DeepID:
                                  1.0,
                                  0]
 
-    def load_data_deepid(self, dataset='', batch_size=500):
+    def load_data_deepid(self, dataset_file, batch_size):
         print 'loading data ...'
-        datasets = load_data_nogzip(dataset)
+        datasets = load_data_split_pickle(dataset_file)
         self.train_set_x, self.train_set_y = datasets[0]
         self.valid_set_x, self.valid_set_y = datasets[1]
 
         self.n_train_batches = self.train_set_x.get_value(borrow=True).shape[0] / batch_size
         self.n_valid_batches = self.valid_set_x.get_value(borrow=True).shape[0] / batch_size
         self.batch_size = batch_size
+
+        print 'train_x: ', self.train_set_x.get_value(borrow=True).shape
+        print 'train_y: ', self.train_set_y.shape
+        print 'valid_x: ', self.valid_set_x.get_value(borrow=True).shape
+        print 'valid_y: ', self.valid_set_y.shape
+
 
     def layer_params(self, nkerns=[20,40,60,80]):
         src_channel = 3
@@ -75,7 +81,7 @@ class DeepID:
         self.layer4_filter_shape = (nkerns[3], nkerns[2], 2, 2)
         self.result_image_shape  = (self.batch_size, nkerns[3], 4, 3)
 
-    def build_layer_architecture(self, n_hidden=160, n_out=100, acti_func=relu):
+    def build_layer_architecture(self, n_hidden, n_out, acti_func=relu):
         '''
         simple means the deepid layer input is only the layer4 output.
         layer1: convpool layer
@@ -186,24 +192,30 @@ class DeepID:
                     self.y: self.train_set_y[self.index * self.batch_size : (self.index+1) * self.batch_size]}
                 )
 
-    def train(self, n_epochs=200, learning_rate=0.01):
+    def train(self, n_epochs, learning_rate):
         print 'Training the model ...'
         train_sample_num = self.train_set_x.get_value(borrow=True).shape[0]
         valid_sample_num = self.valid_set_x.get_value(borrow=True).shape[0]
 
+        loss_records = []
+
         epoch = self.exist_params[-1]
         while epoch < n_epochs:
-            # train_losses = [test_train_model(i) for i in xrange(n_train_batches)]
+            train_losses = []
+            for minibatch_index in xrange( self.n_train_batches ):
+                minibatch_cost = self.train_model(minibatch_index, learning_rate)
+                train_loss     = self.test_train_model(minibatch_index)
+                train_losses.append(train_loss)
+
+                print '\tepoch %i, minibatch_index %i/%i, minibatch error %f' % (epoch, minibatch_index, self.n_train_batches, train_loss)
+
             valid_losses = [self.test_valid_model(i) for i in xrange( self.n_valid_batches) ]
 
-            '''
-            train_score  = numpy.sum(train_losses)
-            valid_score  = numpy.sum(valid_losses)
-            print 'epoch %i, train_score %f, valid_score %f' % (epoch, float(train_score) / train_sample_num, float(valid_score) / valid_sample_num)
-            '''
-            # train_score  = numpy.mean(train_losses)
-            valid_score  = numpy.mean(valid_losses)
-            print 'epoch %i, train_score %f, valid_score %f' % (epoch, 100., valid_score)
+            train_score = numpy.mean(train_losses)
+            valid_score = numpy.mean(valid_losses)
+            loss_records.append((epoch, train_score, valid_score))
+            print 'epoch %i, train_score %f, valid_score %f' % (epoch, train_score, valid_score)
+
             params = [self.softmax_layer.params, 
                       self.deepid_layer.params, 
                       self.layer4.params,
@@ -213,14 +225,12 @@ class DeepID:
                       valid_score,
                       epoch]
             self.pd_helper.dump(params)
-
-            for minibatch_index in xrange( self.n_train_batches ):
-                minibatch_cost = self.train_model(minibatch_index, learning_rate)
-                print '\tepoch %i, minibatch_index %i/%i, minibatch_cost %f' % (epoch, minibatch_index, self.n_train_batches, minibatch_cost)
             epoch += 1
+        return loss_records
 
-def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='', params_file='',
-        nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=100, acti_func=relu):
+
+def simple_deepid(learning_rate, n_epochs, dataset, params_file,
+        nkerns, batch_size, n_hidden, n_out, acti_func):
     pd_helper = ParamDumpHelper(params_file)
     deepid = DeepID(pd_helper)
     deepid.load_data_deepid(dataset, batch_size)
@@ -229,10 +239,14 @@ def simple_deepid(learning_rate=0.1, n_epochs=200, dataset='', params_file='',
     deepid.build_test_train_model()
     deepid.build_test_valid_model()
     deepid.build_train_model()
-    deepid.train(n_epochs, learning_rate)
+    loss_records = deepid.train(n_epochs, learning_rate)
+
+    for record in loss_records:
+        print record[0], record[1], record[2]
+    
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print 'Usage: python %s (dataset) (params_file)' % (sys.argv[0])
+    if len(sys.argv) != 4:
+        print 'Usage: python %s vec_valid vec_train params_file' % (sys.argv[0])
         sys.exit()
-    simple_deepid(learning_rate=0.01, n_epochs=200, dataset=sys.argv[1], params_file=sys.argv[2], nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=1357, acti_func=relu)
+    simple_deepid(learning_rate=0.01, n_epochs=5, dataset=(sys.argv[1], sys.argv[2]), params_file=sys.argv[3], nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=1595, acti_func=relu)
