@@ -23,8 +23,8 @@ class ParamDumpHelper:
 
     def params_to_file(self, params):
         f = gzip.open(self.dump_file, 'wb')
-        if len(params) > 5:
-            params = params[3:]
+        if len(params) > 20:
+            params = params[10:]
         pickle.dump(params, f)
         f.close()
 
@@ -50,6 +50,7 @@ class DeepID:
                                  [None, None],
                                  [None, None],
                                  [None, None],
+                                 1.0,
                                  1.0,
                                  0]
 
@@ -207,14 +208,16 @@ class DeepID:
                 train_loss     = self.test_train_model(minibatch_index)
                 train_losses.append(train_loss)
 
-                print '\tepoch %i, minibatch_index %i/%i, minibatch error %f' % (epoch, minibatch_index, self.n_train_batches, train_loss)
+                line = '\r\tepoch %i, minibatch_index %i/%i, error %f' % (epoch, minibatch_index, self.n_train_batches, train_loss)
+                sys.stdout.write(line)
+                sys.stdout.flush()
 
             valid_losses = [self.test_valid_model(i) for i in xrange( self.n_valid_batches) ]
 
             train_score = numpy.mean(train_losses)
             valid_score = numpy.mean(valid_losses)
             loss_records.append((epoch, train_score, valid_score))
-            print 'epoch %i, train_score %f, valid_score %f' % (epoch, train_score, valid_score)
+            print '\nepoch %i, train_score %f, valid_score %f' % (epoch, train_score, valid_score)
 
             params = [self.softmax_layer.params, 
                       self.deepid_layer.params, 
@@ -223,6 +226,7 @@ class DeepID:
                       self.layer2.params,
                       self.layer1.params,
                       valid_score,
+                      train_score,
                       epoch]
             self.pd_helper.dump(params)
             epoch += 1
@@ -250,4 +254,4 @@ if __name__ == '__main__':
     if len(sys.argv) != 4:
         print 'Usage: python %s vec_valid vec_train params_file' % (sys.argv[0])
         sys.exit()
-    simple_deepid(learning_rate=0.01, n_epochs=50, dataset=(sys.argv[1], sys.argv[2]), params_file=sys.argv[3], nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=1595, acti_func=relu)
+    simple_deepid(learning_rate=0.01, n_epochs=20, dataset=(sys.argv[1], sys.argv[2]), params_file=sys.argv[3], nkerns=[20,40,60,80], batch_size=500, n_hidden=160, n_out=1595, acti_func=relu)
