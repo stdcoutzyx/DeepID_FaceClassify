@@ -128,14 +128,57 @@ In the conv_net module, there are five programme files.
 **Note:** 
 there are so many parameters need to be adjusted for DeepID, so i did not show them directly in the command line for the simple use of my code. If you want to change the epoch num, learning rate, batch size and so on, please change them in the last line of the file.
 
+
 #### deepid_generate.py
 
 ***TODO***
 
+# Performance
 
+## DeepID performance
 
+After running the `deepid_class.py`, you will get the output of the programme like that. The first part is the train error and valid error of each epoch, The second part is the summarization of the `epoch, train error, valid error`. 
 
+```
+epoch 15, train_score 0.000444, valid_score 0.066000
+        epoch 16, minibatch_index 62/63, error 0.000000
+epoch 16, train_score 0.000413, valid_score 0.065733
+        epoch 17, minibatch_index 62/63, error 0.000000
+epoch 17, train_score 0.000508, valid_score 0.065333
+        epoch 18, minibatch_index 62/63, error 0.000000
+epoch 18, train_score 0.000413, valid_score 0.070267
+        epoch 19, minibatch_index 62/63, error 0.000000
+epoch 19, train_score 0.000413, valid_score 0.064533
 
+0 0.974349206349 0.962933333333
+1 0.890095238095 0.897466666667
+2 0.70126984127 0.666666666667
+3 0.392031746032 0.520133333333
+4 0.187619047619 0.360666666667
+5 0.20526984127 0.22
+6 0.054380952381 0.171066666667
+7 0.0154920634921 0.128
+8 0.00650793650794 0.100133333333
+9 0.00377777777778 0.0909333333333
+10 0.00292063492063 0.086
+11 0.0015873015873 0.0792
+12 0.00133333333333 0.0754666666667
+13 0.00111111111111 0.0714666666667
+14 0.000761904761905 0.068
+15 0.000444444444444 0.066
+16 0.000412698412698 0.0657333333333
+17 0.000507936507937 0.0653333333333
+18 0.000412698412698 0.0702666666667
+19 0.000412698412698 0.0645333333333
+```
+
+You can also put the second part of the output into a figure with matplotlib.
+
+![deepid on youtube](./doc/error_rate_deepid_youtubeface.png)
+
+## Generated Feature performance
+
+***TODO***
 
 
 # Reference
